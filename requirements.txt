@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+Scrapy
+openai
+chromadb
+scrapy-playwright
+langchain[llms]
+tiktoken
