@@ -5,6 +5,7 @@ This repo contains source code for server.
 ## Prerequisite
 1. &gt; Python 3.11
 2. ChromaDB
+3. Neon
 
 ## Setup
 1. Run `python3 -m venv .venv` to setup development environment
@@ -19,4 +20,8 @@ Help Links
 - [FastAPI](https://fastapi.tiangolo.com)
 - [Langchain](https://python.langchain.com/docs/get_started/introduction)
 - [Scrapy](https://scrapy.org)
-- [scrapy-playwright](https://github.com/scrapy-plugins/scrapy-playwright)
+- [Scrapy Playwright](https://github.com/scrapy-plugins/scrapy-playwright)
+- [Neon](https://neon.tech/docs/ai/ai-concepts)
+- [SQLAlchemy](https://www.sqlalchemy.org)
+- [Vector](https://neon.tech/docs/extensions/pgvector)
+- [Pydantic](https://docs.pydantic.dev/latest)

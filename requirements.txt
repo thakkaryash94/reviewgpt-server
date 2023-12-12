@@ -6,3 +6,6 @@ chromadb
 scrapy-playwright
 langchain[llms]
 tiktoken
+sqlalchemy
+psycopg2-binary
+python-dotenv
