@@ -1,7 +1,8 @@
 import uvicorn
 import subprocess
+import requests
 
-from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, Request, status
 from pydantic import BaseModel, Field
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,7 +23,7 @@ from langchain.chat_models import ChatOllama
 from langchain.schema import HumanMessage
 from sqlalchemy.orm import Session
 from chatmodel import generate_one_time_answer
-from constants import MODEL
+from constants import MODEL, RECAPTCHA_SITEVERIFY_URL, RECAPTCHA_TOKEN
 from database import crud, models, schemas
 from database.database import get_db, engine
 from dotenv import load_dotenv
@@ -41,12 +42,29 @@ class ReviewBody(BaseModel):
             "https://www.flipkart.com/boat-airdopes-161-40-hours-playback-asap-charge-10mm-drivers-bluetooth-headset/product-reviews/itm8a7493150ae4a?pid=ACCG6DS7WDJHGWSH&lid=LSTACCG6DS7WDJHGWSH4INU8G&marketplace=FLIPKART",
         ],
     )
+    token: str
 
 
 # @router.post("/reviews/one-time", response_model=schemas.ReviewResponse)
 @router.post("/reviews/one-time")
-async def get_one_time_review(body: ReviewBody) -> Any:
+async def get_one_time_review(request: Request, body: ReviewBody) -> Any:
     url = body.url
+    client_ip = request.client.host
+    print(client_ip)
+
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    payload = {"secret": RECAPTCHA_TOKEN, "response": body.token}
+    response = requests.request(
+        "POST", RECAPTCHA_SITEVERIFY_URL, headers=headers, data=payload
+    )
+
+    result_json = response.json()
+    if not result_json.get("success"):
+        return {
+            "code": status.HTTP_401_UNAUTHORIZED,
+            "message": "Unauthorized Access",
+            "success": True,
+        }
     result: Any
     if "https://www.amazon" in url:
         # Call amazon spider
