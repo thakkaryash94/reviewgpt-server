@@ -1,14 +1,8 @@
 import scrapy
-import chromadb
 from datetime import datetime
 import re
-from langchain.llms import Ollama
-from langchain.embeddings import OllamaEmbeddings
-from chromadb import Documents, EmbeddingFunction, Embeddings
-from typing import TypeVar, Union
 
-from constants import MODEL, OLLAMA_URL
-from database.schemas import Review, ReviewList
+from app.database.schemas import Review, ReviewList
 
 # from database import db_connection
 

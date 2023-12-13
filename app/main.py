@@ -22,13 +22,10 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.chat_models import ChatOllama
 from langchain.schema import HumanMessage
 from sqlalchemy.orm import Session
-from chatmodel import generate_one_time_answer
-from constants import MODEL, RECAPTCHA_SITEVERIFY_URL, RECAPTCHA_TOKEN
-from database import crud, models, schemas
-from database.database import get_db, engine
-from dotenv import load_dotenv
-
-load_dotenv()
+from .chatmodel import generate_one_time_answer
+from .constants import MODEL, RECAPTCHA_SITEVERIFY_URL, RECAPTCHA_TOKEN
+from .database import crud, models, schemas
+from .database.database import get_db, engine
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -52,27 +49,27 @@ async def get_one_time_review(request: Request, body: ReviewBody) -> Any:
     client_ip = request.client.host
     print(client_ip)
 
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    payload = {"secret": RECAPTCHA_TOKEN, "response": body.token}
-    response = requests.request(
-        "POST", RECAPTCHA_SITEVERIFY_URL, headers=headers, data=payload
-    )
+    # headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    # payload = {"secret": RECAPTCHA_TOKEN, "response": body.token}
+    # response = requests.request(
+    #     "POST", RECAPTCHA_SITEVERIFY_URL, headers=headers, data=payload
+    # )
 
-    result_json = response.json()
-    if not result_json.get("success"):
-        return {
-            "code": status.HTTP_401_UNAUTHORIZED,
-            "message": "Unauthorized Access",
-            "success": True,
-        }
+    # result_json = response.json()
+    # if not result_json.get("success"):
+    #     return {
+    #         "code": status.HTTP_401_UNAUTHORIZED,
+    #         "message": "Unauthorized Access",
+    #         "success": True,
+    #     }
     result: Any
     if "https://www.amazon" in url:
         # Call amazon spider
         result = subprocess.run(
             [
                 "scrapy",
-                "runspider",
-                "./spiders/amazonspider.py",
+                "crawl",
+                "amazon",
                 "-a",
                 f"url={url}",
                 "-a",
@@ -84,11 +81,17 @@ async def get_one_time_review(request: Request, body: ReviewBody) -> Any:
     if "https://www.flipkart" in url:
         # Call amazon spider
         result = subprocess.run(
-            ["scrapy", "runspider", "./spiders/flipkartspider.py", "-a", f"url={url}"],
+            [
+                "scrapy",
+                "runspider",
+                "./spiders/flipkartspider.py",
+                "-a",
+                f"url={url}",
+            ],
             capture_output=True,
         )
+    print(result)
     if result.stdout:
-        # print(result.stdout)
         return {
             "code": status.HTTP_200_OK,
             "message": generate_one_time_answer(result.stdout),

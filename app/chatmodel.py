@@ -6,7 +6,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import LLMResult
 from langchain.chat_models import ChatOllama
 from langchain.schema import HumanMessage
-from constants import MODEL, OLLAMA_URL
+from .constants import MODEL
 
 
 # def chat(prompt_message):
