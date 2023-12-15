@@ -19,13 +19,25 @@ class ReviewResponse(ResponseBase):
     data: ReviewResponseData
 
 
-class HistoryCreate(BaseModel):
-    email: str
+class OTHistoryBase(BaseModel):
     ip_address: str | None = None
     url: str
+    is_done: bool | None = None
+
+
+class OTHistory(OTHistoryBase):
+    id: int
 
     class Config:
         from_attributes = True
+
+
+class OTHistoryCreate(OTHistoryBase):
+    pass
+
+
+class OTHistoryUpdate(OTHistoryBase):
+    pass
 
 
 class Review(BaseModel):

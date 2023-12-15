@@ -16,6 +16,10 @@ uvicorn app.main:app --reload --port=5000
 ```
 4. Visit http://127.0.0.1:5000/docs for Swagger APIs
 
+## DB Migrations
+1. Run `alembic revision --autogenerate -m "initial migrations"` to generate migration script
+1. Run `alembic upgrade head` to run the migration
+
 Help Links
 - [FastAPI](https://fastapi.tiangolo.com)
 - [Langchain](https://python.langchain.com/docs/get_started/introduction)

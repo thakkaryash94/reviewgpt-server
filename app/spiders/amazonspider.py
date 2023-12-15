@@ -3,6 +3,7 @@ from datetime import datetime
 import re
 
 from app.database.schemas import Review, ReviewList
+from app.logger import get_logger
 
 # from database import db_connection
 
@@ -16,6 +17,8 @@ RATING_CLASS_ID = "review-star-rating"
 REVIEWS_CLASS_ID = "review"
 REVIEW_ID_CLASS_ID = "id"
 NEXT_PAGE_CLASS_ID = "a-last"
+
+logger = get_logger("Amazon")
 
 
 class Amazon(scrapy.Spider):
@@ -43,6 +46,7 @@ class Amazon(scrapy.Spider):
         )
 
     async def parse(self, response):
+        logger.info(f"Scraping {self.start_urls[0]} completed")
         page = response.meta["playwright_page"]
         average_rating_text = response.xpath(
             './/i[@data-hook="average-star-rating"]/span[1]/text()'
@@ -111,6 +115,7 @@ class Amazon(scrapy.Spider):
         #         )
         # else:
         #     print("*************No Page Left*************")
+        logger.info(f"Scraping {self.start_urls[0]} completed")
         print(ReviewList(self.docs).model_dump_json())
 
     async def errback(self, failure):

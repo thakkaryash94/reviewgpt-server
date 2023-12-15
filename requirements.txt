@@ -1,11 +1,11 @@
 fastapi
 uvicorn[standard]
 Scrapy
-openai
 chromadb
 scrapy-playwright
 langchain[llms]
-tiktoken
 sqlalchemy
+alembic
 psycopg2-binary
 python-dotenv
+sentry-sdk[fastapi]

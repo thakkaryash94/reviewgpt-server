@@ -2,7 +2,10 @@ import requests
 import json
 
 from app.database.schemas import ReviewResponseData
-from .constants import MODEL, OLLAMA_URL
+from app.logger import get_logger
+from app.constants import MODEL, OLLAMA_URL
+
+logger = get_logger("AI")
 
 
 def generate_one_time_answer(user_input):
@@ -23,7 +26,8 @@ def generate_one_time_answer(user_input):
         "options": {"temperature": 2.5, "top_p": 0.99, "top_k": 100},
     }
 
-    print(f"Generating a result")
+    logger.info(f"Generating AI result")
     response = requests.post(f"{OLLAMA_URL}/api/generate", json=data, stream=False)
     json_data = json.loads(response.text)
+    logger.info(f"AI result generated")
     return ReviewResponseData.model_validate_json(json_data.get("response"))
