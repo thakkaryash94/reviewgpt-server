@@ -12,7 +12,7 @@ This repo contains source code for server.
 2. Run `pip install -r requirements.txt` to install dependencies
 3. Run below command to start the server
 ```
-uvicorn main:app --reload --port=5000
+uvicorn app.main:app --reload --port=5000
 ```
 4. Visit http://127.0.0.1:5000/docs for Swagger APIs
 

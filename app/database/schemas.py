@@ -9,10 +9,14 @@ class ResponseBase(BaseModel):
     success: bool
 
 
+class ReviewResponseData(BaseModel):
+    result: bool
+    positive: str
+    negative: str
+
+
 class ReviewResponse(ResponseBase):
-    answer: bool
-    answer_positive: str
-    answer_negative: str
+    data: ReviewResponseData
 
 
 class HistoryCreate(BaseModel):

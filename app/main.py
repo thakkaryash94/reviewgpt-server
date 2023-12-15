@@ -1,6 +1,5 @@
 import uvicorn
 import subprocess
-import requests
 
 from fastapi import APIRouter, Depends, FastAPI, Request, status
 from pydantic import BaseModel, Field
@@ -42,8 +41,8 @@ class ReviewBody(BaseModel):
     token: str
 
 
-# @router.post("/reviews/one-time", response_model=schemas.ReviewResponse)
-@router.post("/reviews/one-time")
+# @router.post("/reviews/one-time")
+@router.post("/reviews/one-time", response_model=schemas.ReviewResponse)
 async def get_one_time_review(request: Request, body: ReviewBody) -> Any:
     url = body.url
     client_ip = request.client.host
@@ -90,11 +89,13 @@ async def get_one_time_review(request: Request, body: ReviewBody) -> Any:
             ],
             capture_output=True,
         )
-    print(result)
+    print("Reviews fetched successfully")
+    data = generate_one_time_answer(result.stdout)
     if result.stdout:
         return {
             "code": status.HTTP_200_OK,
-            "message": generate_one_time_answer(result.stdout),
+            "message": "Response retrieved successfully",
+            "data": data,
             "success": True,
         }
     else:
