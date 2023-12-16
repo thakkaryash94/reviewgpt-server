@@ -24,7 +24,9 @@ from app.chatmodel import generate_one_time_answer
 from app.constants import MODEL, RECAPTCHA_SITEVERIFY_URL, RECAPTCHA_TOKEN
 from app.database import crud, models, schemas
 from app.database.database import get_db
+from app.ipdetails import get_ip_details
 from app.logger import get_logger
+from app.recaptcha import recaptcha_verify
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -49,20 +51,33 @@ async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> 
     logger.info("Request started")
     url = body.url
     client_ip = request.client.host
-    history = schemas.OTHistoryCreate(url=url, ip_address=client_ip)
+    payload = {"secret": RECAPTCHA_TOKEN, "response": body.token}
+    recaptcha_result = recaptcha_verify(payload)
+    count = crud.count_othistory_by_ip(db=db, ip_address=client_ip)
+    ip_info = get_ip_details(client_ip)
+    history = schemas.OTHistoryCreate(
+        url=url,
+        ip_address=client_ip,
+        ip_info=ip_info,
+        status=models.OTHistoryEnum.PENDING,
+    )
     dbHistory = crud.create_othistory(db=db, item=history)
-    # headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    # payload = {"secret": RECAPTCHA_TOKEN, "response": body.token}
-    # response = requests.request(
-    #     "POST", RECAPTCHA_SITEVERIFY_URL, headers=headers, data=payload
-    # )
-    # result_json = response.json()
-    # if not result_json.get("success"):
-    #     return {
-    #         "code": status.HTTP_401_UNAUTHORIZED,
-    #         "message": "Unauthorized Access",
-    #         "success": True,
-    #     }
+    if not recaptcha_result.get("success"):
+        dbHistory.status = models.OTHistoryEnum.REJECTED
+        dbHistory = crud.update_othistory(db=db, item=dbHistory)
+        return {
+            "code": status.HTTP_401_UNAUTHORIZED,
+            "message": "Unauthorized Access",
+            "success": True,
+        }
+    if count >= 5:
+        dbHistory.status = models.OTHistoryEnum.REJECTED
+        dbHistory = crud.update_othistory(db=db, item=dbHistory)
+        return {
+            "code": status.HTTP_429_TOO_MANY_REQUESTS,
+            "message": "Too many requests from same IP",
+            "success": False,
+        }
     result: Any
     if "https://www.amazon" in url:
         # Call amazon spider
@@ -93,10 +108,10 @@ async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> 
         )
     logger.info("Reviews fetched successfully")
     data = generate_one_time_answer(result.stdout)
-    dbHistory.is_done = True
-    dbHistory = crud.update_othistory(db=db, item=dbHistory)
     logger.info("Request completed")
     if result.stdout:
+        dbHistory.status = models.OTHistoryEnum.SUCCESS
+        dbHistory = crud.update_othistory(db=db, item=dbHistory)
         return {
             "code": status.HTTP_200_OK,
             "message": "Response retrieved successfully",
@@ -104,6 +119,8 @@ async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> 
             "success": True,
         }
     else:
+        dbHistory.status = models.OTHistoryEnum.FAILED
+        dbHistory = crud.update_othistory(db=db, item=dbHistory)
         return {
             "code": status.HTTP_500_INTERNAL_SERVER_ERROR,
             "message": "Something went wrong",

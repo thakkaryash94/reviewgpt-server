@@ -1,6 +1,8 @@
 from typing import List, Optional
 from datetime import datetime
-from pydantic import BaseModel, RootModel
+from pydantic import BaseModel, JsonValue, RootModel
+
+from app.database.models import OTHistoryEnum
 
 
 class ResponseBase(BaseModel):
@@ -16,13 +18,14 @@ class ReviewResponseData(BaseModel):
 
 
 class ReviewResponse(ResponseBase):
-    data: ReviewResponseData
+    data: ReviewResponseData | None = None
 
 
 class OTHistoryBase(BaseModel):
     ip_address: str | None = None
+    ip_info: JsonValue | None = None
     url: str
-    is_done: bool | None = None
+    status: OTHistoryEnum
 
 
 class OTHistory(OTHistoryBase):

@@ -6,6 +6,7 @@ scrapy-playwright
 langchain[llms]
 sqlalchemy
 alembic
+ipinfo
 psycopg2-binary
 python-dotenv
 sentry-sdk[fastapi]
