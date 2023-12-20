@@ -15,6 +15,7 @@ This repo contains source code for server.
 uvicorn app.main:app --reload --port=5000
 ```
 4. Visit http://127.0.0.1:5000/docs for Swagger APIs
+5. Run `OLLAMA_HOST=0.0.0.0 OLLAMA_ORIGINS=* ollama serve`
 
 ## DB Migrations
 1. Run `alembic revision --autogenerate -m "initial migrations"` to generate migration script
