@@ -21,6 +21,16 @@ NEXT_PAGE_CLASS_ID = "a-last"
 logger = get_logger("Amazon")
 
 
+def try_parsing_date(text):
+    created_at_string = text.split(" on ")[1]
+    for fmt in ("%B %d, %Y", "%d %B %Y"):
+        try:
+            return datetime.strptime(created_at_string, fmt)
+        except ValueError:
+            pass
+    raise ValueError("no valid date format found")
+
+
 class Amazon(scrapy.Spider):
     name = "amazon"
     headers = {
@@ -83,13 +93,7 @@ class Amazon(scrapy.Spider):
             ratings = re.findall(r"(?:\d*\.*\d+)", rating_text)
             rating = float(ratings[0].replace(",", "."))
             rating_limit = float(ratings[1].replace(",", "."))
-            created_at = datetime.strptime(
-                created_at_string.split(" on ")[1], "%B %d, %Y"
-            ).isoformat()
-            if created_at is None:
-                created_at = datetime.strptime(
-                    created_at_string.split(" on ")[1], "%d %B %Y"
-                ).isoformat()
+            created_at = try_parsing_date(created_at_string)
             self.docs.append(
                 Review(
                     title=title,
