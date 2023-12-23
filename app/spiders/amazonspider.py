@@ -26,11 +26,13 @@ class Amazon(scrapy.Spider):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     }
+    page_limit = 1
     current_page = 1
     docs: list[Review] = []
 
-    def __init__(self, url=None, *args, **kwargs):
+    def __init__(self, url=None, page="1", *args, **kwargs):
         super(Amazon, self).__init__(*args, **kwargs)
+        self.page_limit = int(page)
         self.start_urls = [f"{url}"]
 
     def start_requests(self):
@@ -46,7 +48,6 @@ class Amazon(scrapy.Spider):
         )
 
     async def parse(self, response):
-        logger.info(f"Scraping {self.start_urls[0]} completed")
         page = response.meta["playwright_page"]
         average_rating_text = response.xpath(
             './/i[@data-hook="average-star-rating"]/span[1]/text()'
@@ -83,8 +84,12 @@ class Amazon(scrapy.Spider):
             rating = float(ratings[0].replace(",", "."))
             rating_limit = float(ratings[1].replace(",", "."))
             created_at = datetime.strptime(
-                created_at_string.split(" on ")[1], "%d %B %Y"
+                created_at_string.split(" on ")[1], "%B %d, %Y"
             ).isoformat()
+            if created_at is None:
+                created_at = datetime.strptime(
+                    created_at_string.split(" on ")[1], "%d %B %Y"
+                ).isoformat()
             self.docs.append(
                 Review(
                     title=title,
@@ -97,25 +102,23 @@ class Amazon(scrapy.Spider):
                 )
             )
             # print(f"{id} record inserted")
-        next_page_url = response.xpath(
-            f'.//li[@class="{NEXT_PAGE_CLASS_ID}"]/a/@href'
-        ).get()
-        # if next_page_url is not None:
-        #     self.current_page = self.current_page + 1
-        #     if self.current_page <= 5:
-        #         yield scrapy.Request(
-        #             url=response.urljoin(next_page_url),
-        #             callback=self.parse,
-        #             headers=self.headers,
-        #             meta={
-        #                 "playwright": True,
-        #                 "playwright_include_page": True,
-        #                 "errback": self.errback,
-        #             },
-        #         )
-        # else:
-        #     print("*************No Page Left*************")
-        logger.info(f"Scraping {self.start_urls[0]} completed")
+        if self.page_limit > self.current_page:
+            next_page_url = response.xpath(
+                f'.//li[@class="{NEXT_PAGE_CLASS_ID}"]/a/@href'
+            ).get()
+            if next_page_url is not None:
+                self.current_page = self.current_page + 1
+                if self.current_page <= 5:
+                    yield scrapy.Request(
+                        url=response.urljoin(next_page_url),
+                        callback=self.parse,
+                        headers=self.headers,
+                        meta={
+                            "playwright": True,
+                            "playwright_include_page": True,
+                            "errback": self.errback,
+                        },
+                    )
         print(ReviewList(self.docs).model_dump_json())
 
     async def errback(self, failure):

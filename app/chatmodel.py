@@ -11,7 +11,7 @@ logger = get_logger("AI")
 def generate_one_time_answer(user_input):
     prompt = f"""Below are the product reviews in JSON format.
       {user_input}
-      Your task is to return only JSON response as below.
+      Your task is to return JSON response as below format.
       {{
         result: Should I buy the product, true/false?,
         positive: return positive summery in one sentence,
@@ -23,7 +23,7 @@ def generate_one_time_answer(user_input):
         "model": MODEL,
         "format": "json",
         "stream": False,
-        "options": {"temperature": 2.5, "top_p": 0.99, "top_k": 100},
+        # "options": {"temperature": 2.5, "top_p": 0.99, "top_k": 100},
     }
 
     logger.info(f"Generating AI result")

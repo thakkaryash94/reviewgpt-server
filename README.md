@@ -4,17 +4,16 @@ This repo contains source code for server.
 
 ## Prerequisite
 1. &gt; Python 3.11
-2. ChromaDB
-3. Neon
+2. Neon
 
 ## Setup
 1. Run `python3 -m venv .venv` to setup development environment
 2. Run `pip install -r requirements.txt` to install dependencies
 3. Run below command to start the server
 ```
-uvicorn app.main:app --reload --port=5000
+uvicorn app.main:app --reload --host=0.0.0.0 --port=4000
 ```
-4. Visit http://127.0.0.1:5000/docs for Swagger APIs
+4. Visit http://127.0.0.1:4000/docs for Swagger APIs
 5. Run `OLLAMA_HOST=0.0.0.0 OLLAMA_ORIGINS=* ollama serve`
 
 ## DB Migrations

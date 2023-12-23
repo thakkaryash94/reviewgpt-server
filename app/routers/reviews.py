@@ -1,4 +1,6 @@
+import re
 import subprocess
+from urllib.parse import urlparse, urlunparse
 from fastapi import APIRouter, Depends, Request, status
 
 from pydantic import BaseModel, Field
@@ -46,10 +48,20 @@ dbDep: Session = Annotated[dict, Depends(get_db)]
 logger = get_logger("reviews")
 
 
-@router.post("/one-time", response_model=schemas.ReviewResponse)
+# @router.post("/one-time", response_model=schemas.ReviewResponse)
+@router.post("/one-time")
 async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> Any:
     logger.info("Request started")
     url = body.url
+    product_id: str
+    if re.search("/dp/", url):
+        product_id = re.search(r"dp/(.+)/", url).group(1)
+    if re.search("/product-reviews/", url):
+        product_id = re.search(r"product-reviews/(.+)/", url).group(1)
+    parsed_url = urlparse(url)
+    website = urlunparse((parsed_url.scheme, parsed_url.netloc, "", "", "", ""))
+    url = f"{website}/product-reviews/{product_id}/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=avp_only_reviews"
+
     client_ip = request.client.host
     payload = {"secret": RECAPTCHA_TOKEN, "response": body.token}
     recaptcha_result = recaptcha_verify(payload)
@@ -62,53 +74,52 @@ async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> 
         status=models.OTHistoryEnum.PENDING,
     )
     dbHistory = crud.create_othistory(db=db, item=history)
-    if not recaptcha_result.get("success"):
-        dbHistory.status = models.OTHistoryEnum.REJECTED
+    # if not recaptcha_result.get("success"):
+    #     dbHistory.status = models.OTHistoryEnum.REJECTED
+    #     dbHistory = crud.update_othistory(db=db, item=dbHistory)
+    #     return {
+    #         "code": status.HTTP_401_UNAUTHORIZED,
+    #         "message": "Unauthorized Access",
+    #         "success": True,
+    #     }
+    # if count >= 5:
+    #     dbHistory.status = models.OTHistoryEnum.REJECTED
+    #     dbHistory = crud.update_othistory(db=db, item=dbHistory)
+    #     return {
+    #         "code": status.HTTP_429_TOO_MANY_REQUESTS,
+    #         "message": "Too many requests from same IP",
+    #         "success": False,
+    #     }
+    logger.info(f"Scraping {url}")
+    result: Any
+    crawler = "amazon"
+    if "https://www.flipkart" in url:
+        crawler = "flipkart"
+    result = subprocess.run(
+        [
+            "scrapy",
+            "crawl",
+            f"{crawler}",
+            "-a",
+            f"url={url}",
+            "-a",
+            f"page=1",
+        ],
+        capture_output=True,
+        timeout=20,
+        text=True,
+    )
+    logger.info("Reviews fetched successfully")
+    reviews = result.stdout
+    if reviews == "":
+        dbHistory.status = models.OTHistoryEnum.FAILED
         dbHistory = crud.update_othistory(db=db, item=dbHistory)
         return {
-            "code": status.HTTP_401_UNAUTHORIZED,
-            "message": "Unauthorized Access",
-            "success": True,
-        }
-    if count >= 5:
-        dbHistory.status = models.OTHistoryEnum.REJECTED
-        dbHistory = crud.update_othistory(db=db, item=dbHistory)
-        return {
-            "code": status.HTTP_429_TOO_MANY_REQUESTS,
-            "message": "Too many requests from same IP",
+            "code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "message": "Something went wrong",
             "success": False,
         }
-    result: Any
-    if "https://www.amazon" in url:
-        # Call amazon spider
-        result = subprocess.run(
-            [
-                "scrapy",
-                "crawl",
-                "amazon",
-                "-a",
-                f"url={url}",
-                "-a",
-                f"page=1",
-            ],
-            capture_output=True,
-            text=True,
-        )
-    if "https://www.flipkart" in url:
-        # Call amazon spider
-        result = subprocess.run(
-            [
-                "scrapy",
-                "runspider",
-                "./spiders/flipkartspider.py",
-                "-a",
-                f"url={url}",
-            ],
-            capture_output=True,
-        )
-    logger.info("Reviews fetched successfully")
-    data = generate_one_time_answer(result.stdout)
-    logger.info("Request completed")
+    data = generate_one_time_answer(reviews)
     if result.stdout:
         dbHistory.status = models.OTHistoryEnum.SUCCESS
         dbHistory = crud.update_othistory(db=db, item=dbHistory)
@@ -124,7 +135,7 @@ async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> 
         return {
             "code": status.HTTP_500_INTERNAL_SERVER_ERROR,
             "message": "Something went wrong",
-            "success": True,
+            "success": False,
         }
 
 
