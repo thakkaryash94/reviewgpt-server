@@ -54,13 +54,14 @@ async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> 
     logger.info("Request started")
     url = body.url
     product_id: str
-    if re.search("/dp/", url):
-        product_id = re.search(r"dp/(.+)/", url).group(1)
-    if re.search("/product-reviews/", url):
-        product_id = re.search(r"product-reviews/(.+)/", url).group(1)
-    parsed_url = urlparse(url)
-    website = urlunparse((parsed_url.scheme, parsed_url.netloc, "", "", "", ""))
-    url = f"{website}/product-reviews/{product_id}/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=avp_only_reviews"
+    if re.search("/amazon/", url):
+        if re.search("/dp/", url):
+            product_id = re.search(r"dp/(.+)/", url).group(1)
+        if re.search("/product-reviews/", url):
+            product_id = re.search(r"product-reviews/(.+)/", url).group(1)
+        parsed_url = urlparse(url)
+        website = urlunparse((parsed_url.scheme, parsed_url.netloc, "", "", "", ""))
+        url = f"{website}/product-reviews/{product_id}/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=avp_only_reviews"
 
     client_ip = request.client.host
     payload = {"secret": RECAPTCHA_TOKEN, "response": body.token}
