@@ -15,6 +15,7 @@ uvicorn app.main:app --reload --host=0.0.0.0 --port=4000
 ```
 4. Visit http://127.0.0.1:4000/docs for Swagger APIs
 5. Run `OLLAMA_HOST=0.0.0.0 OLLAMA_ORIGINS=* ollama serve`
+6. Docker build command `docker build -t ogpt-fastapi . --no-cache --platform=linux/amd64`
 
 ## DB Migrations
 1. Run `alembic revision --autogenerate -m "initial migrations"` to generate migration script

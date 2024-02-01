@@ -60,12 +60,12 @@ def mistral_request(user_input):
     prompt = f"""You are a product review analysis bot. Below are the product reviews in JSON format.
       {user_input}
       Your task is to analyze the reviews and Generate a single JSON object response as below format.
-      Avoid any additional text or extraneous information; focus solely on the JSON output.
       {{
         result: Should I buy the product, true/false?,
         positive: return positive summery in one sentence,
         negative: return negative summery in one sentence,
       }}
+      (!) Avoid any additional text or extraneous information; focus solely on the JSON output.
     """
     payload = json.dumps(
         {
