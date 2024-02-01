@@ -54,15 +54,16 @@ async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> 
     logger.info("Request started")
     url = body.url
     product_id: str
-    if re.search("/amazon/", url):
-        if re.search("/dp/", url):
-            product_id = re.search(r"dp/(.+)/", url).group(1)
+    if re.search("amazon", url):
+        if re.search("/product/", url):
+            product_id = re.search(r"/([A-Z0-9]{10})/", url).group(1)
         if re.search("/product-reviews/", url):
             product_id = re.search(r"product-reviews/(.+)/", url).group(1)
         parsed_url = urlparse(url)
         website = urlunparse((parsed_url.scheme, parsed_url.netloc, "", "", "", ""))
         url = f"{website}/product-reviews/{product_id}/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=avp_only_reviews"
 
+    logger.info(f"Request URL: {url}")
     client_ip = request.client.host
     payload = {"secret": RECAPTCHA_TOKEN, "response": body.token}
     recaptcha_result = recaptcha_verify(payload)
@@ -112,6 +113,7 @@ async def get_one_time_review(request: Request, body: ReviewBody, db: dbDep) -> 
     )
     logger.info("Reviews fetched successfully")
     reviews = result.stdout
+    logger.info(f"Reviews: {reviews}")
     if reviews == "":
         dbHistory.status = models.OTHistoryEnum.FAILED
         dbHistory = crud.update_othistory(db=db, item=dbHistory)

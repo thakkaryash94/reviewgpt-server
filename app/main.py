@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sentry_sdk
-from app.routers import reviews
+from app.routers import default, reviews
 from app.database.database import init_db
 from app.constants import SENTRY_DSN_URL
 
@@ -38,6 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(reviews.router, prefix="/api")
+app.include_router(default.router)
 
 if __name__ == "__main__":
     uvicorn.run(app, port=5000)

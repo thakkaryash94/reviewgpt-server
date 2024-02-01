@@ -88,7 +88,7 @@ def mistral_request(user_input):
     )
 
     json_data = json.loads(response.text)
-    logger.info(json_data)
+    # logger.info(json_data)
     return json_data.get("choices")[0].get("message").get("content")
 
 
