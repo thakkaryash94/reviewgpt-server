@@ -50,10 +50,10 @@ class Amazon(scrapy.Spider):
             url=self.start_urls[0],
             callback=self.parse,
             headers=self.headers,
+            errback=self.errback,
             meta={
                 "playwright": True,
                 "playwright_include_page": True,
-                "errback": self.errback,
             },
         )
 
@@ -94,17 +94,16 @@ class Amazon(scrapy.Spider):
             rating = float(ratings[0].replace(",", "."))
             rating_limit = float(ratings[1].replace(",", "."))
             created_at = try_parsing_date(created_at_string)
-            self.docs.append(
-                Review(
-                    title=title,
-                    content=review_text,
-                    author=author,
-                    is_verified=is_verified,
-                    rating=rating,
-                    rating_limit=rating_limit,
-                    created_at=created_at,
-                )
+            reviewItem = Review(
+                title=title,
+                content=review_text,
+                author=author,
+                is_verified=is_verified,
+                rating=rating,
+                rating_limit=rating_limit,
+                created_at=created_at,
             )
+            self.docs.append(reviewItem)
             # print(f"{id} record inserted")
         if self.page_limit > self.current_page:
             next_page_url = response.xpath(
@@ -126,5 +125,7 @@ class Amazon(scrapy.Spider):
         print(ReviewList(self.docs).model_dump_json())
 
     async def errback(self, failure):
+        logger.error("===========failure===========")
+        logger.error(failure)
         page = failure.request.meta["playwright_page"]
         await page.close()
